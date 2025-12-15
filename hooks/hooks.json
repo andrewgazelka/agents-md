@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run $CLAUDE_PLUGIN_DIR/hooks/inject-agents.ts",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

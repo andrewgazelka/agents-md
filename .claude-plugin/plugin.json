@@ -1,0 +1,11 @@
+{
+  "name": "agents-md",
+  "version": "1.0.0",
+  "description": "Auto-inject AGENTS.md into Claude Code context",
+  "author": {
+    "name": "Andrew Gazelka",
+    "github": "andrewgazelka"
+  },
+  "license": "MIT",
+  "hooks": "./hooks/hooks.json"
+}

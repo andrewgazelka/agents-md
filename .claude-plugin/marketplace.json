@@ -1,0 +1,22 @@
+{
+  "name": "agents-md",
+  "owner": {
+    "name": "Andrew Gazelka",
+    "github": "andrewgazelka"
+  },
+  "plugins": [
+    {
+      "name": "agents-md",
+      "source": "./",
+      "description": "Auto-inject AGENTS.md into Claude Code context",
+      "version": "1.0.0",
+      "author": {
+        "name": "Andrew Gazelka",
+        "github": "andrewgazelka"
+      },
+      "license": "MIT",
+      "keywords": ["agents", "agents.md", "context", "instructions"],
+      "category": "utilities"
+    }
+  ]
+}
