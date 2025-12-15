@@ -6,25 +6,25 @@ const input = await readHookInput();
 const filePath = input.tool_input?.file_path;
 
 if (!filePath) {
-  approve();
+  approve("PreToolUse");
   process.exit(0);
 }
 
 const agentsPath = findAgentsMd(dirname(filePath));
 
 if (!agentsPath) {
-  approve();
+  approve("PreToolUse");
   process.exit(0);
 }
 
 const seen = getSeenPaths(input.session_id);
 
 if (seen.has(agentsPath)) {
-  approve();
+  approve("PreToolUse");
   process.exit(0);
 }
 
 // New AGENTS.md found - inject it
 await markSeen(input.session_id, agentsPath);
 const content = readAgentsMd(agentsPath);
-approve(formatContext(agentsPath, content));
+approve("PreToolUse", formatContext(agentsPath, content));
