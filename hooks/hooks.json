@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run $CLAUDE_PLUGIN_DIR/hooks/inject-agents.ts",
+            "command": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/inject-agents.ts",
             "timeout": 5
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run $CLAUDE_PLUGIN_DIR/hooks/on-read.ts",
+            "command": "bun run ${CLAUDE_PLUGIN_ROOT}/hooks/on-read.ts",
             "timeout": 5
           }
         ]
