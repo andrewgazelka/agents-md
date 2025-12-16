@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, isAbsolute, basename } from "node:path";
 import { tmpdir, homedir } from "node:os";
 
 const LOCK_TIMEOUT_MS = 5000;
@@ -7,6 +7,29 @@ const LOCK_RETRY_MS = 10;
 const LOCK_STALE_MS = 30000; // Consider lock stale after 30s
 
 const DEFAULT_PATTERNS = ["AGENTS.md", "CONTRIBUTING.md"];
+
+export type AutoreadEntry =
+  | { type: "file"; path: string }
+  | { type: "directory"; path: string; children: string[] };
+
+function expandPath(pattern: string): string {
+  if (pattern.startsWith("~/")) {
+    return join(homedir(), pattern.slice(2));
+  }
+  return pattern;
+}
+
+function collapsePath(path: string): string {
+  const home = homedir();
+  if (path.startsWith(home + "/")) {
+    return "~/" + path.slice(home.length + 1);
+  }
+  return path;
+}
+
+function isAbsolutePattern(pattern: string): boolean {
+  return pattern.startsWith("~/") || isAbsolute(pattern);
+}
 
 function parseAutoreadFile(content: string): string[] {
   return content
@@ -52,18 +75,53 @@ export function getPatterns(startDir: string): string[] {
   return getGlobalPatterns();
 }
 
-export function findAutoreadFiles(startDir: string): string[] {
+function resolvePattern(pattern: string, baseDir?: string): AutoreadEntry | null {
+  const path = isAbsolutePattern(pattern)
+    ? expandPath(pattern)
+    : baseDir
+      ? join(baseDir, pattern)
+      : null;
+
+  if (!path || !existsSync(path)) {
+    return null;
+  }
+
+  const stat = statSync(path);
+  if (stat.isDirectory()) {
+    const children = readdirSync(path).sort();
+    return { type: "directory", path, children };
+  }
+  return { type: "file", path };
+}
+
+export function findAutoreadEntries(startDir: string): AutoreadEntry[] {
   const patterns = getPatterns(startDir);
-  const found: string[] = [];
+  const found: AutoreadEntry[] = [];
+  const seenPaths = new Set<string>();
+
+  const addEntry = (entry: AutoreadEntry | null) => {
+    if (entry && !seenPaths.has(entry.path)) {
+      seenPaths.add(entry.path);
+      found.push(entry);
+    }
+  };
+
+  // Split patterns into absolute and relative
+  const absolutePatterns = patterns.filter(isAbsolutePattern);
+  const relativePatterns = patterns.filter((p) => !isAbsolutePattern(p));
+
+  // Resolve absolute patterns
+  for (const pattern of absolutePatterns) {
+    addEntry(resolvePattern(pattern));
+  }
+
+  // Walk up directories for relative patterns
   let dir = startDir;
   const root = "/";
 
   while (dir !== root) {
-    for (const pattern of patterns) {
-      const candidate = join(dir, pattern);
-      if (existsSync(candidate)) {
-        found.push(candidate);
-      }
+    for (const pattern of relativePatterns) {
+      addEntry(resolvePattern(pattern, dir));
     }
     const parent = dirname(dir);
     if (parent === dir) break;
@@ -71,6 +129,13 @@ export function findAutoreadFiles(startDir: string): string[] {
   }
 
   return found;
+}
+
+// Legacy: returns file paths only (for backward compat)
+export function findAutoreadFiles(startDir: string): string[] {
+  return findAutoreadEntries(startDir)
+    .filter((e): e is { type: "file"; path: string } => e.type === "file")
+    .map((e) => e.path);
 }
 
 // Legacy function for compatibility - returns first match
@@ -193,6 +258,25 @@ export function readAgentsMd(path: string): string {
   return readFileSync(path, "utf-8");
 }
 
+export function formatFileContext(path: string, content: string): string {
+  return `<autoread-file path="${collapsePath(path)}">\n${content}\n</autoread-file>`;
+}
+
+export function formatDirectoryContext(path: string, children: string[]): string {
+  const displayPath = collapsePath(path);
+  const name = basename(path);
+  return `<autoread-dir name="${name}" path="${displayPath}">\n${children.join("\n")}\n</autoread-dir>`;
+}
+
+export function formatEntry(entry: AutoreadEntry): string {
+  if (entry.type === "file") {
+    const content = readFileSync(entry.path, "utf-8");
+    return formatFileContext(entry.path, content);
+  }
+  return formatDirectoryContext(entry.path, entry.children);
+}
+
+// Legacy alias
 export function formatContext(path: string, content: string): string {
-  return `<agents-md path="${path}">\n${content}\n</agents-md>`;
+  return formatFileContext(path, content);
 }
