@@ -1,22 +1,26 @@
 import { readHookInput, outputContext, output } from "./types";
-import { findAgentsMd, markSeen, readAgentsMd, formatContext } from "./util";
+import { findAutoreadFiles, markSeen, readAgentsMd, formatContext } from "./util";
 
-console.error("[agents-md] SessionStart hook executing...");
+console.error("[autoread] SessionStart hook executing...");
 
 const input = await readHookInput();
-console.error("[agents-md] Input received:", JSON.stringify(input));
+console.error("[autoread] Input received:", JSON.stringify(input));
 const cwd = input.cwd || process.cwd();
 
-const agentsPath = findAgentsMd(cwd);
+const files = findAutoreadFiles(cwd);
 
-if (agentsPath) {
-  console.error("[agents-md] Found AGENTS.md at:", agentsPath);
-  await markSeen(input.session_id, agentsPath);
-  const content = readAgentsMd(agentsPath);
-  const context = formatContext(agentsPath, content);
-  console.error("[agents-md] Outputting context:", context.slice(0, 200));
-  outputContext("SessionStart", context);
+if (files.length > 0) {
+  console.error("[autoread] Found files:", files);
+  const contexts: string[] = [];
+  for (const filePath of files) {
+    await markSeen(input.session_id, filePath);
+    const content = readAgentsMd(filePath);
+    contexts.push(formatContext(filePath, content));
+  }
+  const combined = contexts.join("\n\n");
+  console.error("[autoread] Outputting context:", combined.slice(0, 200));
+  outputContext("SessionStart", combined);
 } else {
-  console.error("[agents-md] No AGENTS.md found");
+  console.error("[autoread] No autoread files found");
   output({});
 }

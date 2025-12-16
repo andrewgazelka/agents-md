@@ -1,7 +1,7 @@
 {
-  "name": "agents-md",
-  "version": "1.0.0",
-  "description": "Auto-inject AGENTS.md into Claude Code context",
+  "name": "autoread",
+  "version": "2.0.0",
+  "description": "Auto-inject context files (AGENTS.md, CONTRIBUTING.md, etc) into Claude Code",
   "author": {
     "name": "Andrew Gazelka",
     "github": "andrewgazelka"

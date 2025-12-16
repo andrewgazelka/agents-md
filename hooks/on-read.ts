@@ -1,6 +1,6 @@
 import { dirname } from "node:path";
 import { readHookInput, approve } from "./types";
-import { findAgentsMd, getSeenPaths, markSeen, readAgentsMd, formatContext } from "./util";
+import { findAutoreadFiles, getSeenPaths, markSeen, readAgentsMd, formatContext } from "./util";
 
 const input = await readHookInput();
 const filePath = input.tool_input?.file_path;
@@ -10,21 +10,23 @@ if (!filePath) {
   process.exit(0);
 }
 
-const agentsPath = findAgentsMd(dirname(filePath));
-
-if (!agentsPath) {
-  approve("PreToolUse");
-  process.exit(0);
-}
-
+const files = findAutoreadFiles(dirname(filePath));
 const seen = getSeenPaths(input.session_id);
 
-if (seen.has(agentsPath)) {
+// Filter to only unseen files
+const unseenFiles = files.filter((f) => !seen.has(f));
+
+if (unseenFiles.length === 0) {
   approve("PreToolUse");
   process.exit(0);
 }
 
-// New AGENTS.md found - inject it
-await markSeen(input.session_id, agentsPath);
-const content = readAgentsMd(agentsPath);
-approve("PreToolUse", formatContext(agentsPath, content));
+// New autoread files found - inject them
+const contexts: string[] = [];
+for (const autoreadPath of unseenFiles) {
+  await markSeen(input.session_id, autoreadPath);
+  const content = readAgentsMd(autoreadPath);
+  contexts.push(formatContext(autoreadPath, content));
+}
+
+approve("PreToolUse", contexts.join("\n\n"));

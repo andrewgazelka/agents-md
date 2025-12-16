@@ -1,30 +1,86 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 
-const AGENTS_MD = "AGENTS.md";
 const LOCK_TIMEOUT_MS = 5000;
 const LOCK_RETRY_MS = 10;
 const LOCK_STALE_MS = 30000; // Consider lock stale after 30s
 
-export function findAgentsMd(startDir: string): string | null {
+const DEFAULT_PATTERNS = ["AGENTS.md", "CONTRIBUTING.md"];
+
+function parseAutoreadFile(content: string): string[] {
+  return content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+}
+
+function getGlobalPatterns(): string[] {
+  const globalConfig = join(homedir(), ".config", "autoread");
+  if (existsSync(globalConfig)) {
+    return parseAutoreadFile(readFileSync(globalConfig, "utf-8"));
+  }
+  return DEFAULT_PATTERNS;
+}
+
+function getLocalPatterns(dir: string): string[] | null {
+  // Check for .autoread or autoread in the directory
+  for (const name of [".autoread", "autoread"]) {
+    const configPath = join(dir, name);
+    if (existsSync(configPath)) {
+      return parseAutoreadFile(readFileSync(configPath, "utf-8"));
+    }
+  }
+  return null;
+}
+
+export function getPatterns(startDir: string): string[] {
+  // Walk up to find local config, otherwise use global
   let dir = startDir;
   const root = "/";
 
   while (dir !== root) {
-    const candidate = join(dir, AGENTS_MD);
-    if (existsSync(candidate)) {
-      return candidate;
+    const local = getLocalPatterns(dir);
+    if (local !== null) {
+      return local;
     }
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
-  return null;
+
+  return getGlobalPatterns();
+}
+
+export function findAutoreadFiles(startDir: string): string[] {
+  const patterns = getPatterns(startDir);
+  const found: string[] = [];
+  let dir = startDir;
+  const root = "/";
+
+  while (dir !== root) {
+    for (const pattern of patterns) {
+      const candidate = join(dir, pattern);
+      if (existsSync(candidate)) {
+        found.push(candidate);
+      }
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  return found;
+}
+
+// Legacy function for compatibility - returns first match
+export function findAgentsMd(startDir: string): string | null {
+  const files = findAutoreadFiles(startDir);
+  return files.length > 0 ? files[0] : null;
 }
 
 function getStateDir(): string {
-  const dir = join(tmpdir(), "agents-md-plugin");
+  const dir = join(tmpdir(), "autoread-plugin");
   mkdirSync(dir, { recursive: true });
   return dir;
 }

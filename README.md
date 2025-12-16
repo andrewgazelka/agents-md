@@ -1,31 +1,35 @@
 <p align="center">
-  <img src=".github/assets/header.svg" alt="agents-md" width="100%"/>
+  <img src=".github/assets/header.svg" alt="autoread" width="100%"/>
 </p>
 
 <p align="center">
-  <code>claude plugin marketplace add andrewgazelka/agents-md && claude plugin install agents-md</code>
+  <code>claude plugin marketplace add andrewgazelka/autoread && claude plugin install autoread</code>
 </p>
 
-Claude Code plugin that auto-injects `AGENTS.md` into context. Bridges the gap until Anthropic adds native support.
+Claude Code plugin that auto-injects context files into your session. Configurable via simple text files.
 
-<p align="center">
-<img width="570" height="416" alt="image" src="https://github.com/user-attachments/assets/da15b637-b849-4a67-ac09-772dc45b3d65" />
-</p>
+## Config
 
-> [!NOTE]
-> **Dear Anthropic:** Please add native `AGENTS.md` support so I can archive this before Christmas!
->
-> The [Linux Foundation](https://www.linuxfoundation.org/press/linux-foundation-launches-agentic-ai-initiative-to-accelerate-open-and-interoperable-ai-agent-ecosystem) just launched AGENTS.md as a founding project alongside MCP. OpenAI, Cursor, Zed, GitHub Copilot all support it.
+Create `~/.config/autoread` with one filename per line:
 
-## Features
+```
+AGENTS.md
+CONTRIBUTING.md
+```
 
-- **SessionStart**: Injects `AGENTS.md` from cwd when session begins
-- **Read hook**: Discovers new `AGENTS.md` files as Claude reads files in different directories
-- **Per-session state**: Same file won't be injected twice
+Override per-repo with `.autoread` or `autoread` in any directory.
 
 ## How It Works
 
-Hooks walk up the directory tree looking for `AGENTS.md` and inject contents as `additionalContext`. State tracked via lockfile-protected JSON in tmpdir.
+1. **SessionStart**: Walks up from cwd, injects all matching files
+2. **Read hook**: Discovers new context files as Claude reads files in different directories
+3. **Per-session state**: Same file won't be injected twice
+
+## Defaults
+
+If no config exists, defaults to:
+- `AGENTS.md`
+- `CONTRIBUTING.md`
 
 ## Requirements
 
@@ -38,7 +42,7 @@ Hooks walk up the directory tree looking for `AGENTS.md` and inject contents as 
 
 You can `ln -s AGENTS.md CLAUDE.md`, but:
 - Pollutes repos with Claude-specific files
-- Doesn't auto-discover AGENTS.md in subdirectories
+- Doesn't auto-discover files in subdirectories
 - This plugin works transparently
 
 </details>

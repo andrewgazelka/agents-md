@@ -1,21 +1,21 @@
 {
-  "name": "agents-md",
+  "name": "autoread",
   "owner": {
     "name": "Andrew Gazelka",
     "github": "andrewgazelka"
   },
   "plugins": [
     {
-      "name": "agents-md",
+      "name": "autoread",
       "source": "./",
-      "description": "Auto-inject AGENTS.md into Claude Code context",
-      "version": "1.0.0",
+      "description": "Auto-inject context files (AGENTS.md, CONTRIBUTING.md, etc) into Claude Code",
+      "version": "2.0.0",
       "author": {
         "name": "Andrew Gazelka",
         "github": "andrewgazelka"
       },
       "license": "MIT",
-      "keywords": ["agents", "agents.md", "context", "instructions"],
+      "keywords": ["agents", "agents.md", "contributing", "context", "instructions", "autoread"],
       "category": "utilities"
     }
   ]
