@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <code>claude plugin marketplace add andrewgazelka/autoread && claude plugin install autoread</code>
+  <code>claude plugin marketplace add andrewgazelka/claude-autoread && claude plugin install autoread</code>
 </p>
 
 Claude Code plugin that auto-injects context files into your session. Configurable via simple text files.
